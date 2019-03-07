@@ -66,11 +66,29 @@ class Episode:
         done = False
         action_was_successful = self.environment.last_action_success
 
+        if action['action'] == 'FoundOne':
+            objects = self._env.last_event.metadata['objects']
+            visible_objects = [o['objectType'] for o in objects if o['visible']]
+            #set model boolean to true
+
+            #reward if at least one object is visible
+            for target, bool_val in self.target_dict.items():
+                if (target in visible_objects) and not bool_val:
+                    self.target_dict[target] = True
+                    reward += (GOAL_SUCCESS_REWARD)/2
+
+
         if action['action'] == 'Done':
             done = True
             objects = self._env.last_event.metadata['objects']
             visible_objects = [o['objectType'] for o in objects if o['visible']]
-            if self.target in visible_objects:
+            #update if target was visible
+            for target, bool_val in self.target_dict.items():
+             
+                if (target in visible_objects) and not bool_val:
+                    self.target_dict[target] = True
+
+            if all(bool_val == True for bool_val in self.target_dict.values()):
                 reward += GOAL_SUCCESS_REWARD
                 self.success = True
 
@@ -95,7 +113,8 @@ class Episode:
             self._env.reset(scene)
 
         # For now, single target.
-        self.target = 'Tomato'
+        self.targets = ['Tomato','Bowl']
+        self.target_dict = {'Tomato':False, 'Bowl':False}
         self.success = False
         self.cur_scene = scene
         self.actions_taken = []
